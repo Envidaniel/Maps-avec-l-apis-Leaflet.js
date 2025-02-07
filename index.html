@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Géolocalisation avec Leaflet.js</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    #map {
+      height: 300px;
+      width: 100%;
+    }
+    #info {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div id="info">
+    <p><strong>Latitude:</strong> <span id="latitude"></span></p>
+    <p><strong>Longitude:</strong> <span id="longitude"></span></p>
+    <p><strong>Précision Latitude/Longitude:</strong> <span id="accuracy"></span> mètres</p>
+    <p><strong>Altitude:</strong> <span id="altitude"></span> mètres</p>
+    <p><strong>Précision Altitude:</strong> <span id="altitudeAccuracy"></span> mètres</p>
+    <p><strong>Angle par rapport au Nord:</strong> <span id="heading"></span> degrés</p>
+    <p><strong>Vitesse:</strong> <span id="speed"></span> m/s</p>
+    <p><strong>Dernière position:</strong> <span id="timestamp"></span></p>
+  </div>
+  <h1 style="text-align: center; font-family: Arial; color: red;">Maps avec l'apis Leaflet.js</h1>
+  <div id="map"></div>
+ 
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    let map;
+    let userMarker;
+    let pathCoordinates = [];
+    let polyline;
+
+    
+    function initMap() {
+     
+      map = L.map('map').setView([48.8566, 2.3522], 15);
+
+      
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      }).addTo(map);
+
+      
+      polyline = L.polyline(pathCoordinates, { color: 'red' }).addTo(map);
+
+      
+      if (navigator.geolocation) {
+        navigator.geolocation.watchPosition(updatePosition, showError, {
+          enableHighAccuracy: true,
+          timeout: 5000,
+          maximumAge: 0
+        });
+      } else {
+        alert("Géolocalisation non supportée par ce navigateur.");
+      }
+    }
+
+    
+    function updatePosition(position) {
+      const latitude = position.coords.latitude;
+      const longitude = position.coords.longitude;
+      const accuracy = position.coords.accuracy;
+      const altitude = position.coords.altitude;
+      const altitudeAccuracy = position.coords.altitudeAccuracy;
+      const heading = position.coords.heading;
+      const speed = position.coords.speed;
+      const timestamp = new Date(position.timestamp).toLocaleString();
+
+      
+      if (userMarker) {
+        
+        userMarker.setLatLng([latitude, longitude]);
+      } else {
+        
+        userMarker = L.marker([latitude, longitude]).addTo(map).bindPopup("Vous êtes ici").openPopup();
+      }
+
+      
+      map.setView([latitude, longitude], 15);
+
+      
+      pathCoordinates.push([latitude, longitude]);
+      polyline.setLatLngs(pathCoordinates);
+
+      
+      document.getElementById('latitude').textContent = latitude;
+      document.getElementById('longitude').textContent = longitude;
+      document.getElementById('accuracy').textContent = accuracy;
+      document.getElementById('altitude').textContent = altitude || 'Non disponible';
+      document.getElementById('altitudeAccuracy').textContent = altitudeAccuracy || 'Non disponible';
+      document.getElementById('heading').textContent = heading !== null ? heading : 'Non disponible';
+      document.getElementById('speed').textContent = speed !== null ? speed : 'Non disponible';
+      document.getElementById('timestamp').textContent = timestamp;
+    }
+
+    
+    function showError(error) {
+      switch(error.code) {
+        case error.PERMISSION_DENIED:
+          alert("L'utilisateur a refusé la demande de géolocalisation.");
+          break;
+        case error.POSITION_UNAVAILABLE:
+          alert("Les informations de position sont indisponibles.");
+          break;
+        case error.TIMEOUT:
+          alert("La demande de géolocalisation a expiré.");
+          break;
+        case error.UNKNOWN_ERROR:
+          alert("Une erreur inconnue s'est produite.");
+          break;
+      }
+    }
+
+ 
+    window.onload = initMap;
+  </script>
+</body>
+</html>
